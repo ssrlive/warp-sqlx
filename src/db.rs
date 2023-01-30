@@ -1,5 +1,7 @@
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use std::{convert::Infallible, sync::Arc};
 use tokio::fs;
+use warp::Filter;
 
 const PG_HOST: &str = "localhost";
 const PG_DB: &str = "postgres";
@@ -11,17 +13,10 @@ const SQL_FILE: &str = "sql/create_tables.sql";
 
 pub type Db = Pool<Postgres>;
 
-async fn new_db_pool(
-    host: &str,
-    db: &str,
-    user: &str,
-    pwd: &str,
-    max_conn: u32,
-) -> anyhow::Result<Db> {
-    let db_url = format!("postgres://{}:{}@{}/{}", user, pwd, host, db);
+async fn new_db_pool(host: &str, db: &str, user: &str, pwd: &str, max_conn: u32) -> anyhow::Result<Db> {
+    let db_url = format!("postgres://{user}:{pwd}@{host}/{db}");
     PgPoolOptions::new()
         .max_connections(max_conn)
-        // .connect_timeout(std::time::Duration::from_millis(500))
         .connect(&db_url)
         .await
         .map_err(|e| anyhow::anyhow!(e))
@@ -51,4 +46,8 @@ pub async fn init_db() -> anyhow::Result<Db> {
     }
     let db = new_db_pool(PG_HOST, PG_DB, PG_USER, PG_PWD, PG_MAX_CONN).await?;
     Ok(db)
+}
+
+pub fn with_db(db: Arc<Db>) -> impl Filter<Extract = (Arc<Db>,), Error = Infallible> + Clone {
+    warp::any().map(move || db.clone())
 }
