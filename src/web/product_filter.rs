@@ -59,38 +59,41 @@ pub fn product_rest_filter(
 }
 
 async fn product_list(db: Arc<db::Db>) -> Result<Json, warp::Rejection> {
-    let products = ProductController::get_all(&db).await?;
-    json_response(&products)
+    let products = ProductController::get_all(&db).await.map_err(|e| cvt_err(e))?;
+    json_response(&products).map_err(|e| cvt_err(e))
 }
 
 async fn product_get(id: i64, db: Arc<db::Db>) -> Result<Json, warp::Rejection> {
-    let product = ProductController::get_by_id(&db, id).await?;
-    json_response(&product)
+    let product = ProductController::get_by_id(&db, id).await.map_err(|e| cvt_err(e))?;
+    json_response(&product).map_err(|e| cvt_err(e))
 }
 
 async fn product_create(product: Product, db: Arc<db::Db>) -> Result<Json, warp::Rejection> {
-    let product = ProductController::create(&db, &product).await?;
-    json_response(&product)
+    let product = ProductController::create(&db, &product).await.map_err(|e| cvt_err(e))?;
+    json_response(&product).map_err(|e| cvt_err(e))
 }
 
 async fn product_update(id: i64, product: Product, db: Arc<db::Db>) -> Result<Json, warp::Rejection> {
-    let product = ProductController::update(&db, id, &product).await?;
-    json_response(&product)
+    let product = ProductController::update(&db, id, &product)
+        .await
+        .map_err(|e| cvt_err(e))?;
+    json_response(&product).map_err(|e| cvt_err(e))
 }
 
 async fn product_delete(id: i64, db: Arc<db::Db>) -> Result<Json, warp::Rejection> {
-    let product = ProductController::delete(&db, id).await?;
-    json_response(&product)
+    let product = ProductController::delete(&db, id).await.map_err(|e| cvt_err(e))?;
+    json_response(&product).map_err(|e| cvt_err(e))
 }
 
-fn json_response<T: Serialize>(data: &T) -> Result<Json, warp::Rejection> {
-    #[derive(Debug)]
-    struct InvalidParameter(serde_json::Error);
-    impl warp::reject::Reject for InvalidParameter {}
-
-    let json = serde_json::to_string(data).map_err(|e| {
-        log::error!("json_response: {}", e);
-        warp::reject::custom(InvalidParameter(e))
-    })?;
+fn json_response<T: Serialize>(data: &T) -> anyhow::Result<Json> {
+    let json = serde_json::to_string(data).map_err(|e| anyhow::anyhow!(e))?;
     Ok(warp::reply::json(&json))
+}
+
+#[derive(Debug)]
+struct DbError(anyhow::Error);
+impl warp::reject::Reject for DbError {}
+
+fn cvt_err(err: anyhow::Error) -> warp::reject::Rejection {
+    warp::reject::custom(DbError(err))
 }

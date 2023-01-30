@@ -26,48 +26,48 @@ impl Product {
 pub struct ProductController;
 
 impl ProductController {
-    pub async fn get_all(db: &Db) -> Result<Vec<Product>, warp::Rejection> {
+    pub async fn get_all(db: &Db) -> anyhow::Result<Vec<Product>> {
         let sb = sqlb::select().table(Product::TABLE).columns(Product::FIELDS);
-        let products: Vec<Product> = sb.fetch_all(db).await.unwrap();
+        let products: Vec<Product> = sb.fetch_all(db).await.map_err(|e| anyhow::anyhow!(e))?;
         Ok(products)
     }
 
-    pub async fn get_by_id(db: &Db, id: i64) -> Result<Product, warp::Rejection> {
+    pub async fn get_by_id(db: &Db, id: i64) -> anyhow::Result<Product> {
         let sb = sqlb::select()
             .table(Product::TABLE)
             .columns(Product::FIELDS)
             .and_where(Product::ID, "=", id);
-        let product: Product = sb.fetch_one(db).await.unwrap();
+        let product: Product = sb.fetch_one(db).await.map_err(|e| anyhow::anyhow!(e))?;
         Ok(product)
     }
 
-    pub async fn create(db: &Db, product: &Product) -> Result<Product, warp::Rejection> {
+    pub async fn create(db: &Db, product: &Product) -> anyhow::Result<Product> {
         let fields = product.fields_without_id();
         let sb = sqlb::insert()
             .table(Product::TABLE)
             .data(fields)
             .returning(Product::FIELDS);
-        let product: Product = sb.fetch_one(db).await.unwrap();
+        let product: Product = sb.fetch_one(db).await.map_err(|e| anyhow::anyhow!(e))?;
         Ok(product)
     }
 
-    pub async fn update(db: &Db, id: i64, product: &Product) -> Result<Product, warp::Rejection> {
+    pub async fn update(db: &Db, id: i64, product: &Product) -> anyhow::Result<Product> {
         let fields = product.fields_without_id();
         let sb = sqlb::update()
             .table(Product::TABLE)
             .data(fields)
             .and_where(Product::ID, "=", id)
             .returning(Product::FIELDS);
-        let product: Product = sb.fetch_one(db).await.unwrap();
+        let product: Product = sb.fetch_one(db).await.map_err(|e| anyhow::anyhow!(e))?;
         Ok(product)
     }
 
-    pub async fn delete(db: &Db, id: i64) -> Result<Product, warp::Rejection> {
+    pub async fn delete(db: &Db, id: i64) -> anyhow::Result<Product> {
         let sb = sqlb::delete()
             .table(Product::TABLE)
             .and_where_eq(Product::ID, id)
             .returning(Product::FIELDS);
-        let product: Product = sb.fetch_one(db).await.unwrap();
+        let product: Product = sb.fetch_one(db).await.map_err(|e| anyhow::anyhow!(e))?;
         Ok(product)
     }
 }
