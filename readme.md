@@ -1,4 +1,4 @@
-# warp_sqlx
+# warp-sqlx
 
 A example app to provide API from database.
 
