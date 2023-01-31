@@ -13,8 +13,31 @@ psql
 \q
 ```
 
-Then, run the following commands to play this app.
+Then, run the following commands to play this toy.
 
 ```bash
 cargo run
+```
+
+Use [curl](https://curl.se/) to test it.
+
+```bash
+# create a product
+curl http://localhost:3030/api/products/ -X POST -H 'Content-Type: application/json' -d '{"name":"John"}'
+
+# create another product
+curl http://localhost:3030/api/products/ -X POST -H 'Content-Type: application/json' -d '{"name":"Peter"}'
+
+# get all products
+curl http://localhost:3030/api/products/
+
+# get a product
+curl http://localhost:3030/api/products/1
+
+# update a product
+curl http://localhost:3030/api/products/1 -X PUT -H 'Content-Type: application/json' -d '{"name":"Adam"}'
+
+# delete a product
+curl http://localhost:3030/api/products/2 -X DELETE
+
 ```
